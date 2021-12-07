@@ -1,25 +1,27 @@
 import TopNavigation from "./TopNavigation";
 import { BsPlusCircleFill } from "react-icons/bs";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 import axios from "axios";
 
-const sendMessage = (username, message) => {
-  axios.post("http://localhost:443/sendMsg", {
+const sendMessage = async (username, message) => {
+  return await axios.post("http://localhost:443/sendMsg", {
     body: {
       msg: message,
-      username:username
+      username: username,
     },
   });
 };
 
 const ContentContainer = (props) => {
-
   return (
     <div className="content-container">
       <TopNavigation />
-      <div className="content-list"></div>
-      <BottomBar username={props.username}/>
+      <div className="content-list">
+        {console.log(props)}
+        {props.messages.messages ? props.messages.messages.map((msg) => <li>{msg.msg}</li>) : <></>}
+      </div>
+      <BottomBar username={props.user} />
     </div>
   );
 };
@@ -35,9 +37,10 @@ const BottomBar = (props) => {
         type="text"
         placeholder="Enter message..."
         className="bottom-bar-input"
-        onKeyDown={(e) => {
+        onKeyDown={async (e) => {
           if (e.key === "Enter") {
-            sendMessage(props.username, e.target.value);
+            const msgs = await sendMessage(props.username, e.target.value);
+            return msgs;
           }
         }}
       />

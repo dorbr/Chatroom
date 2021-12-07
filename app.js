@@ -7,26 +7,33 @@ app.use(express.json());
 
 app.use(express.static("client/build"));
 
-const Connections = [];
-const MESSAGES = [];
+let chatData = {
+  connections: [],
+  messages: [],
+};
 
 const fetchChat = async (req, res) => {
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     Connection: "keep-alive",
   });
-  Connections.push(res);
   setInterval(async () => {
-    const messages = await fetchData();
-    console.log(messages);
-    let data = JSON.stringify(messages);
+    chatData.messages = await fetchData();
+    console.log(chatData);
+    let data = JSON.stringify(chatData);
+    
     res.write(`data: ${data}\n\n`);
+    
+    req.on('close', () => {
+      const { user } = req.params;
+      chatData.connections = chatData.connections.filter(connection => connection === user);
+    });
   }, 3000);
 };
 
 const fetchData = async () => {
   try {
-    return MESSAGES;
+    return chatData.messages;
   } catch (error) {
     return error;
   }
@@ -36,12 +43,18 @@ app.get("/", (req, res) => {
   res.sendFile("/index.html");
 });
 
-app.get("/chat", fetchChat);
+app.get("/chat/:user", fetchChat);
 
 app.post("/sendMsg", (req, res) => {
-  MESSAGES.push(req.body);
-  res.send(MESSAGES);
-})
+  const { body } = req.body;
+  chatData.messages.push(body);
+  res.send(chatData.messages);
+});
+app.post("/addUser", (req, res) => {
+  chatData.connections.push(req.body.username);
+  console.log(chatData.connections);
+  res.send(chatData.connections);
+});
 
 
 

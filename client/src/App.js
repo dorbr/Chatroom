@@ -3,49 +3,44 @@ import React from "react";
 import Channelbar from "./core/ChannelBar";
 import ContentContainer from "./core/ContentContainer";
 import SideBar from "./core/Sidebar";
-import { Router, Routes, Route } from "react-router-dom";
-import Sidebar from "./core/Sidebar";
+import axios from "axios";
 
 function App() {
-  let username = "";
-  const [myMsg, setMyMsg] = React.useState(null);
+  let [messages, setMessages] = React.useState([]);
+  let [username, setUsername] = React.useState(null);
+  
   React.useEffect(() => {
     console.log("EFFECTED");
-    const source = new EventSource("http://localhost:443/chat");
+    if (username === null)
+      setUsername(window.prompt("Please Enter Your Name."));
+    if (username !== null) {
+      const source = new EventSource(`http://localhost:443/chat/${username}`);
 
-    source.onopen = function logEvents(event) {
-      console.log("CONNECTION OPENED");
-      console.log(event);
-    };
-    source.onmessage = function logEvents(event) {
-      console.log(JSON.parse(event.data));
-    };
-  }, [myMsg]);
-
+      source.onopen = function logEvents(event) {
+        console.log("CONNECTION OPENED");
+        axios.post("http://localhost:443/addUser", {
+          username: username,
+        });
+      };
+      source.onmessage = function logEvents(event) {
+        setMessages(JSON.parse(event.data));
+      };
+    }
+  }, [username]);
+  
   return (
-    <Router>
-      <Routes>
-        <Route
-         exect path="/"
-          element={
-            <div>
-              <div
-                className="flex"
-                onClick={() => {
-                  setMyMsg(1);
-                }}
-              >
-                <SideBar />
-                <Channelbar />
-                <ContentContainer username={username} />
-                <div></div>
-              </div>
-            </div>
-          }
-        />
-      </Routes>
-      
-    </Router>
+    
+    <div>
+      {console.log("RENDERING...")}
+      <div className="flex">
+        <SideBar />
+        <Channelbar messages={messages} />
+        {console.log(messages)}
+
+        <ContentContainer messages={messages} user={username}/>
+        <div></div>
+      </div>
+    </div>
   );
 }
 
